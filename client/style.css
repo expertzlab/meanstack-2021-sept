@@ -1,0 +1,12 @@
+body{
+    margin: 50px;
+    background-color: cornflowerblue;
+    color:white;
+}
+
+div {
+    padding: 20px;
+    background-color: cadetblue;
+    width: 200px;
+    height: 10px;
+}
