@@ -5,6 +5,8 @@ var passport = require('passport')
 var LocalStrategy = require('passport-local').Strategy
 var session = require('express-session')
 var cookieParser = require('cookie-parser')
+var jwt = require('jsonwebtoken')
+var key = require('./key')
 
 app.use(cookieParser())
 var sessionCookie = {
@@ -16,14 +18,27 @@ app.use(session(sessionCookie))
 app.use(passport.initialize())
 app.use(passport.session())
 
+const isjwtVerified = (req) => {
+    const token = req.headers.authorization.split(" ")[1]
+
+    var result = jwt.verify(token, key.keyname)
+    if(result){
+        return true;
+    } else {
+        return false;
+    }
+}
+
 app.use((req, res, next) => {
     console.log('req url:', req.url)
     if(req.url == '/' || req.url == '/style.css' || req.url == '/login' ){
         next();
     }
-    else if (req.isAuthenticated()){
+    else if (isjwtVerified(req)){
+        console.log('isverified true')
         next()
     } else {
+        console.log('isverified false')
         res.write('Authentication error')
         res.end()
     }
@@ -59,19 +74,18 @@ passport.deserializeUser( (id, cb) => {
 app.use('/', express.static( __dirname+'/client'))
 app.use(bodyparser.urlencoded({extended:true}))
 
-app.post('/login',passport.authenticate('local', {failureRedirect: '/error'}) , (req, res) => {
+app.post('/login', passport.authenticate('local', {failureRedirect: '/error'}) , (req, res) => {
     console.log('req body received',req.body)
-    res.redirect('/success?user='+req.body.user)
+    var token = jwt.sign({'user':'user1'}, key.keyname, )
+    res.status(200).json({'token':token})
+    //res.send('authentication success with token:'+ token)
+    //res.redirect('/success?user='+req.body.user)
 })
 
 app.get('/welcome', (req, res) => {
-    if(req.isAuthenticated()){
-        res.write("<h1> Welcome "+ req.session.passport.user+ '</h1>')
-        res.end('Session id:' + req.sessionID)
-    } else {
-        res.redirect('/')
-    }
-    
+        //res.write("<h1> Welcome "+ req.session.passport.user+ '</h1>')
+        //res.end('Session id:' + req.sessionID)
+        res.end("WElcome executed")
 })
 
 app.get('/hello', (req, res) => {
